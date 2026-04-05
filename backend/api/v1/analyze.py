@@ -101,7 +101,53 @@ async def analyze_content(request: Request, body: AnalyzeRequest):
         "processing_ms": processing_ms,
     }
     
-    # ── Step 4: Cache Result ────────────────────────────
+    # ── Step 4: Save to Database ──────────────────────────
+    from db.database import AsyncSessionLocal
+    from db.models import AnalysisRecord, DailyStat
+    from datetime import datetime
+    import sys
+    
+    # Run DB insert in background to not block response (using simple new session)
+    async def save_to_db(data: dict):
+        async with AsyncSessionLocal() as session:
+            try:
+                # 1. Save History
+                record = AnalysisRecord(
+                    id=data["id"],
+                    content_type=body.content_type,
+                    content=str(content)[:1000],  # trim 
+                    verdict=data["verdict"],
+                    risk_score=data["risk_score"],
+                    confidence=data["confidence"],
+                    reasons=data["reasons"],
+                    raw_signals=data["signals"],
+                    processing_ms=data["processing_ms"],
+                    client_ip=request.client.host if request.client else None
+                )
+                session.add(record)
+                
+                # 2. Update Stats
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                from sqlalchemy.future import select
+                stat_query = await session.execute(select(DailyStat).where(DailyStat.date == today_str))
+                stat = stat_query.scalar_one_or_none()
+                
+                if not stat:
+                    stat = DailyStat(date=today_str, total_scans=1, fake_detected=1 if data["risk_score"] > 60 else 0)
+                    session.add(stat)
+                else:
+                    stat.total_scans += 1
+                    if data["risk_score"] > 60:
+                        stat.fake_detected += 1
+                        
+                await session.commit()
+            except Exception as e:
+                print(f"DB Error: {e}", file=sys.stderr)
+                
+    import asyncio
+    asyncio.create_task(save_to_db(response_data))
+    
+    # ── Step 5: Cache Result ────────────────────────────
     if redis:
         try:
             await redis.setex(

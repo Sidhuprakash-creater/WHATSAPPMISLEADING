@@ -20,8 +20,18 @@ settings = get_settings()
 # ── Lifespan (startup/shutdown events) ──────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load ML model at startup, cleanup on shutdown"""
+    """Initialize DB, Load ML model at startup, cleanup on shutdown"""
     logger.info("🚀 Starting MisLEADING API Server...")
+    
+    # Initialize Database
+    try:
+        from db.database import engine, Base
+        import db.models  # Import to register tables
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("✅ Database tables created/verified")
+    except Exception as e:
+        logger.error(f"❌ Database initialization failed: {e}")
     
     # Load ML model if exists
     model_path = os.path.join(os.path.dirname(__file__), "ml", "model.pkl")
