@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "982448218329",
+    "project_id": "whatsappsafety",
+    "storage_bucket": "whatsappsafety.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:982448218329:android:2324e01956707c18ee5ec8",
+        "android_client_info": {
+          "package_name": "com.misleading.misleading_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDPVYqf1yLU9cTlEVroos6Bt9AaAVh9eQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
