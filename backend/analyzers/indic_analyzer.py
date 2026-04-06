@@ -18,12 +18,25 @@ class IndicAnalyzer:
         """
         text_lower = text.lower().strip()
         
-        # ── PRIORITY 1: Instant Regional Safe-Verb Filter ─────────────────────
-        # These are common Odia/Hinglish verbs that often trigger false positive scores 
-        # because of the 'gala' suffix or similar character patterns.
+        # ── PRIORITY 1: Instant Regex Pass (0ms) ──────────────────────────
+        # Added 50+ common harmless Odia and Hinglish verbs to avoid AI overhead
         REGIONAL_SAFE_PATTERNS = [
-            r"hei\s*gala", r"jai\s*gala", r"khai\s*gala", r"soi\s*gala", r"chaligala",
-            r"ho\s*gaya", r"hai\s*gala", r"tha\s*gala", r"hobar", r"korichi",
+            # Odia Safe Verbs (Transliterated)
+            r"\bhei\s*gala\b", r"\bkha\w*\s*gala\b", r"\bsoi\s*gala\b", r"\bjai\s*gala\b",
+            r"\braki\s*gala\b", r"\bkhoji\s*gala\b", r"\blekhili\b", r"\bdekhili\b",
+            r"\bpadhili\b", r"\bkhaichi\b", r"\bsoichi\b", r"\bjaochi\b", r"\brakhuchi\b",
+            r"\bkheluchi\b", r"\bhasuchi\b", r"\bkanduchi\b", r"\bkaruchi\b", r"\bbasuchi\b",
+            r"\buthuchi\b", r"\bdhaunuchi\b", r"\bpauchi\b", r"\baasigala\b", r"\brahigala\b",
+            r"\bferigala\b", r"\bkahuchi\b", r"\bsunuchi\b", r"\bdekhuchi\b", r"\bkhauchi\b",
+            
+            # Hinglish Safe Verbs
+            r"\bho\s*gaya\b", r"\bkha\s*liya\b", r"\bso\s*gaya\b", r"\bjaa\s*raha\b",
+            r"\bbaat\s*kar\b", r"\bdekh\s*liya\b", r"\bsun\s*liya\b", r"\bpadh\s*liya\b",
+            r"\bmil\s*gaya\b", r"\baa\s*gaya\b", r"\bchala\s*gaya\b", r"\brakh\s*liya\b",
+            r"\bbhej\s*diya\b", r"\bkar\s*diya\b", r"\blikh\s*liya\b", r"\bsamajh\s*gaya\b",
+            r"\bkha\s*rha\b", r"\bpee\s*liya\b", r"\bgaya\s*tha\b", r"\baaya\s*tha\b",
+            
+            # Greetings/Common
             r"kemiti\s*achha", r"namaskar", r"suva\s*sakal"
         ]
         
