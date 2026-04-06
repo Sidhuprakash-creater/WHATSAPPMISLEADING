@@ -23,55 +23,55 @@ def extract_domain(url: str) -> str:
 
 
 def check_suspicious_patterns(url: str) -> list[dict]:
-    """Heuristic checks for suspicious URL patterns"""
+    """Robust heuristic checks for zero-day phishing patterns"""
     findings = []
     domain = extract_domain(url)
     
-    # Character substitution (l33t speak)
-    leet_patterns = {
-        '0': 'o', '1': 'l', '3': 'e', '4': 'a',
-        '5': 's', '7': 't', '@': 'a'
-    }
-    for char, replacement in leet_patterns.items():
-        if char in domain:
-            findings.append({
-                "type": "leet_speak",
-                "evidence": f"Suspicious character substitution: '{char}' for '{replacement}' in domain",
-            })
-            break
-    
-    # Excessive hyphens
+    # 1. URL Shortener Abuse
+    shorteners = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly', 'cutt.ly', 'rb.gy']
+    if any(s in domain for s in shorteners):
+        findings.append({
+            "type": "url_shortener",
+            "evidence": "URL shortener detected (often used to obscure malicious links)",
+        })
+
+    # 2. Dangerous TLDs (.zip, etc.)
+    suspicious_tlds = ['.zip', '.mov', '.tk', '.ml', '.ga', '.cf', '.gq', '.loan', '.top', '.xyz']
+    if any(domain.endswith(t) for t in suspicious_tlds):
+        findings.append({
+            "type": "dangerous_tld",
+            "evidence": f"Domain contains a high-risk Top Level Domain (.xyz, .zip, .tk, etc.)",
+        })
+
+    # 3. IP instead of hostname
+    if re.match(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$", domain):
+        findings.append({
+            "type": "ip_domain",
+            "evidence": "URL uses a raw IP address instead of a domain name (highly suspicious)"
+        })
+
+    # 4. Punycode check (homograph attacks)
+    if 'xn--' in domain:
+        findings.append({
+            "type": "homograph_attack",
+            "evidence": "Punycode (xn--) detected. May be a homograph attack trying to impersonate a real domain."
+        })
+
+    # 5. Phishing keywords
+    suspicious_keywords = ['login', 'secure', 'bank', 'support-ticket', 'recovery', 'verify-account', 'invoice', 'payment']
+    if any(kw in domain.lower() for kw in suspicious_keywords):
+        findings.append({
+            "type": "phishing_keyword",
+            "evidence": "Domain contains keywords commonly used in phishing campaigns."
+        })
+
+    # 6. Excessive hyphens
     if domain.count('-') >= 3:
         findings.append({
             "type": "excessive_hyphens",
-            "evidence": f"Domain has {domain.count('-')} hyphens — common in phishing",
+            "evidence": f"Domain has {domain.count('-')} hyphens — common in disposable phishing domains."
         })
-    
-    # Very long domain
-    if len(domain) > 40:
-        findings.append({
-            "type": "long_domain",
-            "evidence": f"Unusually long domain ({len(domain)} chars)",
-        })
-    
-    # Suspicious TLDs
-    suspicious_tlds = ['.xyz', '.top', '.click', '.loan', '.work', '.gq', '.ml', '.tk']
-    for tld in suspicious_tlds:
-        if domain.endswith(tld):
-            findings.append({
-                "type": "suspicious_tld",
-                "evidence": f"Domain uses suspicious TLD: {tld}",
-            })
-    
-    # Keyword patterns
-    suspicious_keywords = ['login', 'verify', 'secure', 'update', 'confirm', 'bank', 'paypal']
-    for keyword in suspicious_keywords:
-        if keyword in domain.lower():
-            findings.append({
-                "type": "phishing_keyword",
-                "evidence": f"Domain contains phishing keyword: '{keyword}'",
-            })
-    
+        
     return findings
 
 

@@ -18,15 +18,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     
     # AI Keys
-    ANTHROPIC_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
     
     # URL Security
     GOOGLE_SAFE_BROWSING_KEY: str = ""
     VIRUSTOTAL_API_KEY: str = ""
-    
-    # Image Analysis
-    SIGHTENGINE_API_USER: str = ""
-    SIGHTENGINE_API_SECRET: str = ""
     
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./misleading.db"  # SQLite for dev

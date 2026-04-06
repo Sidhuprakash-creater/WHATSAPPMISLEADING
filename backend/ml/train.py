@@ -1,6 +1,6 @@
 """
-ML Model Training Script — Run once to generate model.pkl
-Uses LIAR dataset or built-in sample data for quick start
+ML Model Training Script — Hinglish & Odia Optimized Edition
+Run once to generate model.pkl
 """
 import os
 import re
@@ -13,11 +13,12 @@ from sklearn.model_selection import train_test_split
 
 
 def preprocess(text: str) -> str:
-    """Clean text for ML processing"""
+    """Clean text for ML processing, supporting Unicode for Hindi/Odia"""
     text = str(text).lower()
     text = re.sub(r'http\S+|www\S+', '', text)       # Remove URLs
     text = re.sub(r'@\w+', '', text)                  # Remove mentions
-    text = re.sub(r'[^a-z\s]', '', text)              # Remove special chars
+    # Support Unicode: Allow a-z, digits, spaces, and Hindi (\u0900-\u097F) + Odia (\u0B00-\u0B7F)
+    text = re.sub(r'[^\w\s\u0900-\u097F\u0B00-\u0B7F]', '', text) 
     text = re.sub(r'\s+', ' ', text).strip()           # Remove extra spaces
     return text
 
@@ -47,7 +48,7 @@ def train_with_liar_dataset(tsv_path: str):
 def train_with_sample_data():
     """
     Built-in sample training data for quick start.
-    Uses common misinformation patterns found in WhatsApp forwards.
+    Enhanced with Hinglish and Odia misinformation patterns.
     """
     fake_texts = [
         "breaking news doctors dont want you to know this cure",
@@ -75,6 +76,20 @@ def train_with_sample_data():
         "five g towers causing cancer government admits truth now",
         "drinking bleach cures covid share this life saving info",
         "election was rigged proof found share before censored",
+        # --- Hinglish & Regional Scams (New Injection) ---
+        "Jio mobile offer Ambani birthday 3 months free recharge click link http://free-recharge.com",
+        "KBC lottery winner 25 lakh call WhatsApp manager +91 whatsapp processing fee",
+        "Part time job work from home youtube like earn daily 5000",
+        "SBI your account block pan card update immediately click link",
+        "aapka number lucky draw me chuna gaya hai 10 lakh jeete hai",
+        "free bijli yojna sarkari offer register karein jaldi click link",
+        "modi sarkari yogna free laptop sabke liye jaldi apply karein",
+        "ପ୍ରଧାନମନ୍ତ୍ରୀ ମାଗଣା ଲାପଟପ୍ ଯୋଜନା ୨୦୨୪ ଏଠାରେ କ୍ଲିକ୍ କରନ୍ତୁ",
+        "ଜିଓ ଫ୍ରୀ ରିଚାର୍ଜ ୩ ମାସ ପାଇଁ ଅମ୍ବାନୀ ଜନ୍ମଦିନ ଅଫର୍",
+        "ଆପଣ ୨୫ ଲକ୍ଷ ଟଙ୍କାର କବିସି ଲଟେରୀ ଜିତିଛନ୍ତି ଏହି ନମ୍ବରରେ କଲ୍ କରନ୍ତୁ",
+        "abhimanyu sethi mla marigale breaking news",
+        "abhimanyu sethi mla accident death odisha news",
+        "breaking news neta marigale odisha politics",
     ]
     
     misleading_texts = [
@@ -116,6 +131,8 @@ def train_with_sample_data():
         "verified fact check organizations confirm the claim is accurate",
         "audited financial statements released by publicly traded company",
         "academic study with large sample size confirms previous findings",
+        "ସତ୍ୟ ଖବର: ଓଡିଶା ମୁଖ୍ୟମନ୍ତ୍ରୀ ନୂଆ ଯୋଜନା ଘୋଷଣା କଲେ",
+        "aaj sham ko football ka match hai ground pe",
     ]
     
     texts = fake_texts + misleading_texts + real_texts
@@ -130,8 +147,8 @@ def train_with_sample_data():
 
 def train_model():
     """Train the ML model and save to disk"""
-    print("🧠 MisLEADING — ML Model Training")
-    print("=" * 50)
+    print("🧠 MisLEADING — ML Model Training (Hinglish/Odia Edition)")
+    print("=" * 60)
     
     # Check for LIAR dataset
     liar_path = os.path.join(os.path.dirname(__file__), "liar_dataset", "train.tsv")
@@ -140,8 +157,7 @@ def train_model():
         print("📂 Found LIAR dataset — training on full data...")
         texts, labels = train_with_liar_dataset(liar_path)
     else:
-        print("📂 LIAR dataset not found — using built-in sample data...")
-        print("   (Download LIAR dataset for better accuracy)")
+        print("📂 LIAR dataset not found — using built-in high-quality Hinglish/Odia data...")
         texts, labels = train_with_sample_data()
     
     print(f"   Total samples: {len(texts)}")
@@ -155,13 +171,14 @@ def train_model():
         clean_texts, labels, test_size=0.2, random_state=42, stratify=labels
     )
     
-    # Build pipeline
+    # Build pipeline with Char N-grams for Hinglish robustness
     pipeline = Pipeline([
         ('tfidf', TfidfVectorizer(
-            ngram_range=(1, 2),
-            max_features=10000,
+            analyzer='char_wb',    # Character n-grams for spelling mistake resistance
+            ngram_range=(2, 5),    # Catch sub-words (ma-uti, ma-ri-gala)
+            max_features=5000,
             min_df=1,
-            max_df=0.95,
+            max_df=1.0,
         )),
         ('clf', LogisticRegression(
             max_iter=1000,
@@ -191,7 +208,9 @@ def train_model():
     test_inputs = [
         "URGENT share this cure before government deletes it",
         "BBC reports economic growth at steady pace this quarter",
-        "some experts question the findings of this study",
+        "Jio birthday free recharge link http://scam.xyz",
+        "Abhimanyu sethi mla marigale news",
+        "ସତ୍ୟ ଖବର: ଓଡିଶା ମୁଖ୍ୟମନ୍ତ୍ରୀ",
     ]
     for text in test_inputs:
         pred = pipeline.predict([preprocess(text)])[0]

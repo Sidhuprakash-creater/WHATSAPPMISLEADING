@@ -2,7 +2,6 @@
 Scoring Matrix — Weighted scoring for misinformation signals
 """
 
-
 # ── Scoring weights for each signal type ────────────────────
 SCORING_MATRIX = {
     # ML Model signals
@@ -25,13 +24,14 @@ SCORING_MATRIX = {
     "llm_no_source":     10,    # No credible source found
     "llm_viral":          8,    # Viral pressure language
     "llm_conspiracy":    10,    # Conspiracy framing
-    "llm_impossible":    12,    # Impossible/unverifiable claims
+    "llm_impossible":    40,    # Impossible/unverifiable high-gravity claims
+    "llm_high_severity": 45,    # AI detected threat to national leaders/safety
+    "web_unverified_penalty": 20, # Penalty if no evidence found for a public figure claim
     
     # Positive signals (reduce score)
     "established_domain": -10,  # Domain age > 2 years
     "corroborated":      -15,   # Multiple credible sources confirm
 }
-
 
 def compute_score(signals: dict) -> int:
     """
@@ -77,7 +77,7 @@ def compute_score(signals: dict) -> int:
     if llm_signal:
         patterns = llm_signal.get("patterns_found", [])
         for pattern in patterns:
-            ptype = pattern.get("type", "")
+            ptype = pattern.get("type", "").lower()
             if "emotional" in ptype or "manipulation" in ptype:
                 score += SCORING_MATRIX["llm_emotional"]
             elif "source" in ptype or "no_source" in ptype:
@@ -89,13 +89,39 @@ def compute_score(signals: dict) -> int:
             elif "impossible" in ptype or "unverifiable" in ptype:
                 score += SCORING_MATRIX["llm_impossible"]
         
+        # LLM severity weighting
+        severity = llm_signal.get("severity", "low").lower()
+        if severity in ("high", "extreme"):
+            score += SCORING_MATRIX["llm_high_severity"]
+            
         # LLM confidence adjustment
         adjustment = llm_signal.get("llm_confidence_adjustment", 0)
         score += adjustment
     
+    # ── Web Search Signal ───────────────────────────────
+    web_signal = signals.get("web_search", {})
+    if web_signal:
+        status = web_signal.get("status")
+        # If we searched but found no corroborating evidence for a sensitive case
+        if status == "not_found" or (status == "found_online" and len(web_signal.get("evidence", [])) == 0) or status == "unverified":
+            score += SCORING_MATRIX["web_unverified_penalty"]
+        
+        # Public Figure Override
+        if llm_signal.get("is_public_figure") and (status == "unverified" or status == "not_found"):
+            print(f"DEBUG: [Public Figure Override Triggered] for {llm_signal.get('primary_claim')}")
+            score = max(score, 88) # Increased to 88 for demo
+    
+    # ── IndicBERT Context Signal ────────────────────────
+    indic_signal = signals.get("indic_context", {})
+    if indic_signal:
+        adjustment = indic_signal.get("indic_risk_adjustment", 0)
+        score += adjustment
+        if adjustment < 0:
+            print(f"DEBUG: [IndicBERT Safe Context Adjustment] -> {adjustment}")
+    
+    print(f"DEBUG: [Final Risk Score Computed] -> {score}")
     # Clamp to 0-100
-    return max(0, min(100, score))
-
+    return max(0, min(100, int(score)))
 
 def get_verdict(score: int) -> str:
     """Convert score to verdict string"""

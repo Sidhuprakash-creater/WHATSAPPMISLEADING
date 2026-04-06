@@ -1,29 +1,42 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/message.dart';
 
 class ApiService {
-  // Use 10.0.2.2 for Android emulator to access localhost, adjust if testing on real device
-  static const String baseUrl = 'http://10.0.2.2:8000/api/v1';
-  static bool useMock = true; // Set to true for blazing fast UI testing without backend!
+  // Using your local IP for real device testing
+  static const String baseUrl = 'http://10.49.240.11:8000/api/v1';
+  static bool useMock = false; // Enabled real backend analysis!
 
   Future<ScanResult> analyzeContent(String contentType, String textContent, {String? fileUrl}) async {
     if (useMock) {
-      // Simulate network delay
       await Future.delayed(const Duration(seconds: 2));
-      
       return _getMockResult(contentType, textContent);
     }
 
     try {
+      String? finalFilePayload = fileUrl;
+      
+      // If it's a local file path (not an HTTP URL), convert to Base64
+      if (fileUrl != null && !fileUrl.startsWith('http')) {
+        final file = File(fileUrl);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          final base64String = base64Encode(bytes);
+          final extension = file.path.split('.').last.toLowerCase();
+          final mimeType = (extension == 'png') ? 'image/png' : 'image/jpeg';
+          finalFilePayload = 'data:$mimeType;base64,$base64String';
+        }
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/analyze'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'content_type': contentType,
           'text': (contentType == 'text' || contentType == 'url') ? textContent : null,
-          'file_url': (contentType == 'image' || contentType == 'video') ? fileUrl : null,
+          'file_url': finalFilePayload,
         }),
       );
 

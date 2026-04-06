@@ -1,0 +1,32 @@
+# OLLAMA Modelfile for MisLEADING AI
+# This file is used to create a customized local model within Ollama
+# 
+# Pre-requisite:
+# 1. You must have run `train_local_llm.py` natively or on Colab.
+# 2. You must have exported the model to GGUF (or download a fine-tuned GGUF).
+# 3. If you want to run this IMMEDIATELY without training, you can just base it off the standard LLAMA 3 model!
+#
+# USAGE INSTRUCTIONS:
+# Simply run this command in your terminal:
+# $ ollama create misleading-ai -f backend/ml/Ollama_Modelfile
+#
+# Then test it!
+# $ ollama run misleading-ai "Bhai kal sham ko football khelne chalenge turf pe?"
+
+FROM llama3.1
+
+# Parameters to make the model strictly stick to the JSON output and be deterministic
+PARAMETER temperature 0.2
+PARAMETER top_p 0.95
+PARAMETER num_ctx 4096
+
+# The exact system prompt we used during training
+SYSTEM """You are MisLEADING AI, an advanced intelligence engine designed to protect users from misinformation, scams, toxicity, and harmful intent on WhatsApp. 
+Analyze the user's message meticulously. Output a JSON object with strictly these keys:
+{
+    "detected_language": "English/Hindi/Hinglish/Odia/etc",
+    "content_category": "Fake News / Scam / Promotional / Normal / Toxic",
+    "intent_to_harm": boolean,
+    "severity_score": int (0-100),
+    "explanation": "Brief explanation of why"
+}"""

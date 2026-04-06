@@ -56,6 +56,13 @@ async def lifespan(app: FastAPI):
         app.state.redis = None
         logger.warning("⚠️ Redis not available — caching disabled")
     
+    # Initialize Fact Check Engine
+    try:
+        from analyzers.fact_checker import engine as fact_engine
+        fact_engine.initialize()
+    except Exception as e:
+        logger.error(f"❌ Failed to load fact check engine: {e}")
+    
     yield  # App runs
     
     # Cleanup
@@ -110,11 +117,13 @@ from api.v1.auth import router as auth_router
 from api.v1.history import router as history_router
 from api.v1.stats import router as stats_router
 from api.websocket import router as ws_router
+from api.v1.language import router as language_router
 
 app.include_router(analyze_router, prefix="/api/v1", tags=["Analysis"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(history_router, prefix="/api/v1", tags=["History"])
 app.include_router(stats_router, prefix="/api/v1", tags=["Stats"])
+app.include_router(language_router, prefix="/api/v1", tags=["Language"])
 app.include_router(ws_router, tags=["WebSocket"])
 
 
