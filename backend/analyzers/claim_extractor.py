@@ -24,8 +24,8 @@ async def extract_claims(text: str) -> list[str]:
         return []
         
     try:
-        from groq import Groq
-        client = Groq(api_key=settings.GROQ_API_KEY)
+        from groq import AsyncGroq
+        client = AsyncGroq(api_key=settings.GROQ_API_KEY)
         
         prompt = f"""
         Extract the core factual statements or claims made in the following text. 
@@ -39,7 +39,7 @@ async def extract_claims(text: str) -> list[str]:
         "{text}"
         """
         
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=250,

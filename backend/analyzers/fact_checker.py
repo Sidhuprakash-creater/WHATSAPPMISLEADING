@@ -3,6 +3,7 @@ Semantic Fact-Checker Engine
 Uses sentence-transformers & FAISS to search claims against a curated database of known truths & scams.
 """
 import logging
+import asyncio
 import json
 
 logger = logging.getLogger(__name__)
@@ -69,22 +70,29 @@ class FactCheckEngine:
         self._initialized = False
 
     def initialize(self):
-        """Loads model and indexes the fact database. Run this on app startup."""
+        """Spawns a background task to load models and index the fact database."""
         if self._initialized:
             return
             
+        import asyncio
+        asyncio.create_task(self._async_init())
+        logger.info("Fact-Check Engine initialization started in BACKGROUND.")
+
+    async def _async_init(self):
+        """The actual heavy loading logic run in the background thread."""
         try:
             from sentence_transformers import SentenceTransformer
             import faiss
             import numpy as np
             
-            logger.info("Initializing Fact-Check Engine: Loading Sentence Transformer...")
-            self.model = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("Fact-Check Background Task: Loading Sentence Transformer...")
+            # Use to_thread for the CPU-bound loading
+            self.model = await asyncio.to_thread(SentenceTransformer, 'all-MiniLM-L6-v2')
             
             # Prepare vectors
             self.texts = [item["text"] for item in FACT_DATABASE]
-            logger.info(f"Encoding {len(self.texts)} facts for FAISS index...")
-            embeddings = self.model.encode(self.texts, convert_to_numpy=True)
+            logger.info(f"Fact-Check Background Task: Encoding {len(self.texts)} facts...")
+            embeddings = await asyncio.to_thread(self.model.encode, self.texts, convert_to_numpy=True)
             
             # Initialize FAISS L2 distance index
             dimension = embeddings.shape[1]
@@ -92,11 +100,11 @@ class FactCheckEngine:
             self.index.add(embeddings)
             
             self._initialized = True
-            logger.info("Fact-Check Engine Online.")
+            logger.info("✅ Fact-Check Engine is now ONLINE in background.")
         except ImportError as e:
-            logger.warning(f"Fact-Check Engine dependencies missing (faiss/sentence-transformers): {e}")
+            logger.warning(f"Fact-Check Engine background load failed (ImportError): {e}")
         except Exception as e:
-            logger.error(f"Failed to initialize Fact-Check Engine: {e}")
+            logger.error(f"Fact-Check Engine background load failed: {e}")
 
     async def check_claims(self, claims: list[str]) -> list[dict]:
         """
@@ -150,13 +158,25 @@ class FactCheckEngine:
     async def check_online_claims(self, claims: list[str]) -> list[dict]:
         """
         Searches the web for evidence regarding unknown or sensitive claims.
-        Filters out mythological clutter (e.g. Mahabharata) to ensure political hoaxes are caught.
+        Uses asyncio.gather to search multiple claims in parallel for extreme speed.
         """
         from .web_search_engine import search_engine
+        import asyncio
+        
+        # Parallel Search: Query all claims at once with strict timeout
+        search_tasks = [search_engine.search_claim(claim) for claim in claims]
+        try:
+            all_search_results = await asyncio.wait_for(
+                asyncio.gather(*search_tasks),
+                timeout=15.0
+            )
+        except asyncio.TimeoutError:
+            logger.warning(f"Parallel web search TIMED OUT after 15s for {len(claims)} claims.")
+            all_search_results = [[] for _ in claims] # Return empty results for all if we hit total timeout
         
         results = []
-        for claim in claims:
-            search_results = await search_engine.search_claim(claim)
+        for i, claim in enumerate(claims):
+            search_results = all_search_results[i]
             
             # Reality Filter: Filter out mythological noise
             filtered_results = []
@@ -174,8 +194,7 @@ class FactCheckEngine:
                 status = "found_online"
                 evidence = filtered_results[:3]
             elif search_results:
-                # If we found results but they were ALL mythological/irrelevant for a real-life claim
-                status = "not_found" # Force re-evaluation by scoring override
+                status = "not_found"
                 
             results.append({
                 "claim": claim,

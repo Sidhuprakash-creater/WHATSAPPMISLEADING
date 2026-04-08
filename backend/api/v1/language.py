@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
-from analyzers.language_detector import detector
+from analyzers.language_detector import get_detector
 
 router = APIRouter(prefix="/language", tags=["Language"])
 
@@ -20,6 +20,10 @@ async def detect_language(request: LanguageRequest):
     """
     if not request.text:
         raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    detector = get_detector()
+    if not detector:
+        return LanguageResponse(language="Error (Model Loading)", confidence=0.0)
     
     result = detector.detect(request.text)
     return LanguageResponse(

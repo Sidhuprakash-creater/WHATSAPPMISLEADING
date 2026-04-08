@@ -1,12 +1,15 @@
 """
-URL Analyzer — Checks URLs against security databases
-Uses Google Safe Browsing + VirusTotal + WHOIS domain age
+URL Analyzer — Google Safe Browsing + VirusTotal + Heuristics
+Now returns FULL verdicts (not just submission IDs).
 """
+import asyncio
+import base64
 import logging
 import re
 from urllib.parse import urlparse
-from datetime import datetime, timezone
+
 import httpx
+
 from config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -14,7 +17,6 @@ settings = get_settings()
 
 
 def extract_domain(url: str) -> str:
-    """Extract domain from URL"""
     try:
         parsed = urlparse(url if url.startswith("http") else f"https://{url}")
         return parsed.netloc or parsed.path.split("/")[0]
@@ -23,74 +25,70 @@ def extract_domain(url: str) -> str:
 
 
 def check_suspicious_patterns(url: str) -> list[dict]:
-    """Robust heuristic checks for zero-day phishing patterns"""
+    """Heuristic checks — instant, no API needed."""
     findings = []
     domain = extract_domain(url)
-    
-    # 1. URL Shortener Abuse
-    shorteners = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly', 'cutt.ly', 'rb.gy']
+
+    shorteners = [
+        "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly",
+        "is.gd", "buff.ly", "cutt.ly", "rb.gy", "short.ly"
+    ]
     if any(s in domain for s in shorteners):
         findings.append({
             "type": "url_shortener",
-            "evidence": "URL shortener detected (often used to obscure malicious links)",
+            "evidence": f"URL shortener '{domain}' detected — destination URL is hidden",
         })
 
-    # 2. Dangerous TLDs (.zip, etc.)
-    suspicious_tlds = ['.zip', '.mov', '.tk', '.ml', '.ga', '.cf', '.gq', '.loan', '.top', '.xyz']
+    suspicious_tlds = [".zip", ".mov", ".tk", ".ml", ".ga", ".cf", ".gq", ".loan", ".top", ".xyz", ".click"]
     if any(domain.endswith(t) for t in suspicious_tlds):
         findings.append({
             "type": "dangerous_tld",
-            "evidence": f"Domain contains a high-risk Top Level Domain (.xyz, .zip, .tk, etc.)",
+            "evidence": f"High-risk TLD on '{domain}' — commonly used by phishing sites",
         })
 
-    # 3. IP instead of hostname
     if re.match(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$", domain):
         findings.append({
             "type": "ip_domain",
-            "evidence": "URL uses a raw IP address instead of a domain name (highly suspicious)"
+            "evidence": "URL uses a raw IP address instead of a domain name — highly suspicious",
         })
 
-    # 4. Punycode check (homograph attacks)
-    if 'xn--' in domain:
+    if "xn--" in domain:
         findings.append({
             "type": "homograph_attack",
-            "evidence": "Punycode (xn--) detected. May be a homograph attack trying to impersonate a real domain."
+            "evidence": f"Punycode detected in '{domain}' — may be impersonating a legitimate site",
         })
 
-    # 5. Phishing keywords
-    suspicious_keywords = ['login', 'secure', 'bank', 'support-ticket', 'recovery', 'verify-account', 'invoice', 'payment']
-    if any(kw in domain.lower() for kw in suspicious_keywords):
+    scam_keywords = [
+        "prize", "winner", "lottery", "cash", "reward", "kbc", "lucky",
+        "free-gift", "claim", "whatsapp-money", "pm-yojana", "modi-scheme"
+    ]
+    if any(kw in url.lower() for kw in scam_keywords):
         findings.append({
-            "type": "phishing_keyword",
-            "evidence": "Domain contains keywords commonly used in phishing campaigns."
+            "type": "financial_scam",
+            "evidence": f"Phishing keyword found in URL: matches known scam patterns",
         })
 
-    # 6. Excessive hyphens
-    if domain.count('-') >= 3:
-        findings.append({
-            "type": "excessive_hyphens",
-            "evidence": f"Domain has {domain.count('-')} hyphens — common in disposable phishing domains."
-        })
-        
     return findings
 
 
 async def check_safe_browsing(url: str) -> dict:
-    """Check URL against Google Safe Browsing API"""
+    """Google Safe Browsing v4 — real-time threat check."""
     if not settings.GOOGLE_SAFE_BROWSING_KEY:
-        return {"checked": False, "reason": "API key not configured"}
-    
+        return {"checked": False, "reason": "Google Safe Browsing API key not configured"}
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(
                 f"https://safebrowsing.googleapis.com/v4/threatMatches:find"
                 f"?key={settings.GOOGLE_SAFE_BROWSING_KEY}",
                 json={
-                    "client": {"clientId": "misleading", "clientVersion": "1.0"},
+                    "client": {"clientId": "misleading", "clientVersion": "2.0"},
                     "threatInfo": {
                         "threatTypes": [
-                            "MALWARE", "SOCIAL_ENGINEERING",
-                            "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"
+                            "MALWARE",
+                            "SOCIAL_ENGINEERING",
+                            "UNWANTED_SOFTWARE",
+                            "POTENTIALLY_HARMFUL_APPLICATION",
                         ],
                         "platformTypes": ["ANY_PLATFORM"],
                         "threatEntryTypes": ["URL"],
@@ -100,38 +98,89 @@ async def check_safe_browsing(url: str) -> dict:
             )
             data = response.json()
             matches = data.get("matches", [])
-            
             if matches:
-                threat = matches[0].get("threatType", "UNKNOWN")
-                return {"checked": True, "threat": threat, "safe": False}
-            return {"checked": True, "threat": None, "safe": True}
+                threat = matches[0].get("threatType", "UNKNOWN_THREAT")
+                platform = matches[0].get("platformType", "ANY_PLATFORM")
+                return {
+                    "checked": True,
+                    "safe": False,
+                    "threat": threat,
+                    "platform": platform,
+                    "verdict": f"DANGEROUS — Google flagged as {threat}",
+                }
+            return {
+                "checked": True,
+                "safe": True,
+                "threat": None,
+                "verdict": "SAFE — Not in Google Safe Browsing threat database",
+            }
     except Exception as e:
-        logger.error(f"Safe Browsing check failed: {e}")
-        return {"checked": False, "reason": str(e)}
+        logger.error(f"Google Safe Browsing check failed: {e}")
+        return {"checked": False, "reason": str(e), "verdict": "Could not check"}
 
 
 async def check_virustotal(url: str) -> dict:
-    """Check URL against VirusTotal"""
+    """
+    VirusTotal URL check — submits AND fetches the full analysis result.
+    Returns actual malicious engine count and full verdict.
+    """
     if not settings.VIRUSTOTAL_API_KEY:
-        return {"checked": False, "reason": "API key not configured"}
-    
+        return {"checked": False, "reason": "VirusTotal API key not configured"}
+
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            # Submit URL for scanning
-            response = await client.post(
-                "https://www.virustotal.com/api/v3/urls",
+        async with httpx.AsyncClient(timeout=20) as client:
+            # Step 1: Submit URL (VirusTotal requires base64url encoded URL as ID)
+            url_id = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
+
+            # Step 2: Try to GET analysis directly (avoids rate limits on re-scan)
+            get_resp = await client.get(
+                f"https://www.virustotal.com/api/v3/urls/{url_id}",
                 headers={"x-apikey": settings.VIRUSTOTAL_API_KEY},
-                data={"url": url},
             )
-            if response.status_code == 200:
-                data = response.json()
-                analysis_id = data.get("data", {}).get("id")
+
+            if get_resp.status_code == 200:
+                data = get_resp.json()
+                stats = (
+                    data.get("data", {})
+                    .get("attributes", {})
+                    .get("last_analysis_stats", {})
+                )
+                malicious = stats.get("malicious", 0)
+                suspicious = stats.get("suspicious", 0)
+                harmless = stats.get("harmless", 0)
+                total = malicious + suspicious + harmless + stats.get("undetected", 0)
+
+                verdict = "SAFE"
+                if malicious >= 3:
+                    verdict = f"DANGEROUS — {malicious}/{total} engines flagged as MALICIOUS"
+                elif malicious >= 1 or suspicious >= 2:
+                    verdict = f"SUSPICIOUS — {malicious} malicious, {suspicious} suspicious detections"
+
                 return {
                     "checked": True,
-                    "analysis_id": analysis_id,
-                    "submitted": True,
+                    "malicious": malicious,
+                    "suspicious": suspicious,
+                    "harmless": harmless,
+                    "total_engines": total,
+                    "verdict": verdict,
                 }
-            return {"checked": False, "reason": f"HTTP {response.status_code}"}
+            elif get_resp.status_code == 404:
+                # URL not in VT cache — submit for scan
+                post_resp = await client.post(
+                    "https://www.virustotal.com/api/v3/urls",
+                    headers={"x-apikey": settings.VIRUSTOTAL_API_KEY},
+                    data={"url": url},
+                )
+                if post_resp.status_code == 200:
+                    return {
+                        "checked": True,
+                        "verdict": "Submitted for scan — not yet in VirusTotal database",
+                        "malicious": 0,
+                        "suspicious": 0,
+                    }
+
+            return {"checked": False, "reason": f"VirusTotal returned HTTP {get_resp.status_code}"}
+
     except Exception as e:
         logger.error(f"VirusTotal check failed: {e}")
         return {"checked": False, "reason": str(e)}
@@ -139,44 +188,56 @@ async def check_virustotal(url: str) -> dict:
 
 async def analyze(url: str) -> dict:
     """
-    Full URL analysis pipeline.
-    Returns: { safe, threat, score, findings, domain_info }
+    Full URL security pipeline.
+    Runs Google Safe Browsing + VirusTotal in parallel, combines with heuristics.
+    Returns rich structured result for Groq to reference.
     """
     domain = extract_domain(url)
-    score = 0
-    findings = []
-    
-    # 1. Pattern heuristics (instant)
+    logger.info(f"Starting URL security scan for: {domain}")
+
+    # Heuristics (instant)
     pattern_findings = check_suspicious_patterns(url)
-    findings.extend(pattern_findings)
-    score += len(pattern_findings) * 8  # 8 points per suspicious pattern
-    
-    # 2. Safe Browsing check
-    sb_result = await check_safe_browsing(url)
-    if sb_result.get("checked") and not sb_result.get("safe"):
-        threat = sb_result.get("threat", "UNKNOWN")
-        score += 35
-        findings.append({
-            "type": "safe_browsing_threat",
-            "evidence": f"Google Safe Browsing: {threat} detected",
-        })
-    
-    # 3. VirusTotal check
-    vt_result = await check_virustotal(url)
-    
-    # Determine overall safety
+
+    # GSB + VT in parallel
+    gsb_result, vt_result = await asyncio.gather(
+        check_safe_browsing(url),
+        check_virustotal(url),
+        return_exceptions=True,
+    )
+
+    if isinstance(gsb_result, Exception):
+        gsb_result = {"checked": False, "reason": str(gsb_result)}
+    if isinstance(vt_result, Exception):
+        vt_result = {"checked": False, "reason": str(vt_result)}
+
+    # Calculate score
+    score = len(pattern_findings) * 8
+    if gsb_result.get("checked") and not gsb_result.get("safe"):
+        score += 50  # Hard penalty for confirmed threat
+    vt_malicious = vt_result.get("malicious", 0) if isinstance(vt_result, dict) else 0
+    if vt_malicious >= 3:
+        score += 40
+    elif vt_malicious >= 1:
+        score += 15
+
     is_safe = score < 20
-    
+
     result = {
+        "url": url,
+        "domain": domain,
         "safe": is_safe,
         "score": min(score, 100),
-        "domain": domain,
-        "threat": sb_result.get("threat"),
-        "findings": findings,
-        "safe_browsing": sb_result,
+        "heuristic_findings": pattern_findings,
+        "google_safe_browsing": gsb_result,
         "virustotal": vt_result,
-        "details": f"URL scan: {'SAFE' if is_safe else 'SUSPICIOUS'} (score: {score})",
+        "threat": gsb_result.get("threat") if isinstance(gsb_result, dict) else None,
+        "findings": pattern_findings,  # Keep for backwards compat with scoring.py
+        "summary": (
+            f"URL '{domain}': GSB={gsb_result.get('verdict', 'unchecked')}, "
+            f"VT={vt_result.get('verdict', 'unchecked')}, "
+            f"Heuristics={len(pattern_findings)} findings"
+        ),
     }
-    
-    logger.info(f"URL analysis for {domain}: score={score}, safe={is_safe}")
+
+    logger.info(f"URL scan complete for {domain}: score={score}, safe={is_safe}")
     return result

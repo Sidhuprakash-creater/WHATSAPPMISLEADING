@@ -90,5 +90,16 @@ class LanguageDetector:
             logger.error(f"Language detection error: {e}")
             return {"language": "Error", "confidence": 0.0}
 
-# Global instance
-detector = LanguageDetector()
+_detector_instance = None
+
+def get_detector():
+    """Lazy-load the Language Detector singleton."""
+    global _detector_instance
+    if _detector_instance is None:
+        try:
+            logger.info("🌍 Initializing Language Detector (Lazy Load)...")
+            _detector_instance = LanguageDetector()
+        except Exception as e:
+            logger.error(f"❌ Failed to init Language Detector: {e}")
+            return None
+    return _detector_instance

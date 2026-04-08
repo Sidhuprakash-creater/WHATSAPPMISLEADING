@@ -29,16 +29,18 @@ class WebSearchEngine:
 
     def _sync_search(self, query: str):
         with DDGS() as ddgs:
-            # We use text search for snippets
-            results = list(ddgs.text(query, max_results=self.max_results))
-            return [
-                {
+            # Robust extraction for multiple DDGS versions (6.x+)
+            raw_results = ddgs.text(query)
+            results = []
+            for r in raw_results:
+                if len(results) >= self.max_results:
+                    break
+                results.append({
                     "title": r.get("title"),
                     "body": r.get("body"),
                     "href": r.get("href")
-                }
-                for r in results
-            ]
+                })
+            return results
 
 # Singleton instance
 search_engine = WebSearchEngine()

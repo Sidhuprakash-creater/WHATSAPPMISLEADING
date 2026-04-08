@@ -29,13 +29,23 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile({String? displayName, String? status}) async {
+  Future<void> updateOnlineStatus(bool isOnline) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await _firestore.collection('users').doc(user.uid).update({
+      'status': isOnline ? 'online' : 'offline',
+      'lastSeen': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateProfile({String? displayName, String? about}) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     final updates = <String, dynamic>{};
     if (displayName != null) updates['displayName'] = displayName;
-    if (status != null) updates['status'] = status;
+    if (about != null) updates['about'] = about;
 
     if (updates.isNotEmpty) {
       await _firestore.collection('users').doc(user.uid).update(updates);

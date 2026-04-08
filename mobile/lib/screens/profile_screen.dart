@@ -19,7 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _nameController = TextEditingController(text: userProvider.userData?['displayName'] ?? '');
-    _statusController = TextEditingController(text: userProvider.userData?['status'] ?? '');
+    _statusController = TextEditingController(text: userProvider.userData?['about'] ?? '');
   }
 
   @override
@@ -32,7 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _saveProfile() {
     context.read<UserProvider>().updateProfile(
       displayName: _nameController.text,
-      status: _statusController.text,
+      about: _statusController.text,
     );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile updated successfully!')),

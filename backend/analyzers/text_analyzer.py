@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 def preprocess(text: str) -> str:
     """Clean text for ML model input"""
     text = str(text).lower()
+    # Allow all characters (Indic/Universal) but clean extra whitespace
     text = re.sub(r'http\S+|www\S+', '', text)
     text = re.sub(r'@\w+', '', text)
-    text = re.sub(r'[^a-z\s]', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 

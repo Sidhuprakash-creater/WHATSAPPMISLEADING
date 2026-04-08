@@ -5,6 +5,15 @@ import re
 
 logger = logging.getLogger(__name__)
 
+# Instant Regex Fast-Pass (0ms reasoning) for regional greetings/safe verbs
+REGIONAL_SAFE_PATTERNS = [
+    r"\b(salam|namaste|kemiti achu|kemicho|khabar kana|jay jagannath)\b",
+    r"\b(good morning|suprabhat|subha sakala|suvasankhya)\b",
+    r"\b(happy birthday|janmadina ra shubhechha|mubarak)\b",
+    r"\b(kana karuchu|kya kar rahe ho|what are you doing)\b",
+    r"\b(khana khaya|khai dela ki|did you eat)\b"
+]
+
 class IndicAnalyzer:
     def __init__(self, ollama_url="http://localhost:11434/api/generate"):
         self.ollama_url = ollama_url
@@ -16,32 +25,23 @@ class IndicAnalyzer:
         Priority 1: Instant Regex Pattern (Odia/Hinglish Verbs)
         Priority 2: Local LLM Deep Context (Ollama)
         """
-        text_lower = text.lower().strip()
+        import unicodedata
+        text_norm = unicodedata.normalize('NFKC', text.lower().strip())
         
-        # ── PRIORITY 1: Instant Regex Pass (0ms) ──────────────────────────
-        # Added 50+ common harmless Odia and Hinglish verbs to avoid AI overhead
-        REGIONAL_SAFE_PATTERNS = [
-            # Odia Safe Verbs (Transliterated)
-            r"\bhei\s*gala\b", r"\bkha\w*\s*gala\b", r"\bsoi\s*gala\b", r"\bjai\s*gala\b",
-            r"\braki\s*gala\b", r"\bkhoji\s*gala\b", r"\blekhili\b", r"\bdekhili\b",
-            r"\bpadhili\b", r"\bkhaichi\b", r"\bsoichi\b", r"\bjaochi\b", r"\brakhuchi\b",
-            r"\bkheluchi\b", r"\bhasuchi\b", r"\bkanduchi\b", r"\bkaruchi\b", r"\bbasuchi\b",
-            r"\buthuchi\b", r"\bdhaunuchi\b", r"\bpauchi\b", r"\baasigala\b", r"\brahigala\b",
-            r"\bferigala\b", r"\bkahuchi\b", r"\bsunuchi\b", r"\bdekhuchi\b", r"\bkhauchi\b",
-            
-            # Hinglish Safe Verbs
-            r"\bho\s*gaya\b", r"\bkha\s*liya\b", r"\bso\s*gaya\b", r"\bjaa\s*raha\b",
-            r"\bbaat\s*kar\b", r"\bdekh\s*liya\b", r"\bsun\s*liya\b", r"\bpadh\s*liya\b",
-            r"\bmil\s*gaya\b", r"\baa\s*gaya\b", r"\bchala\s*gaya\b", r"\brakh\s*liya\b",
-            r"\bbhej\s*diya\b", r"\bkar\s*diya\b", r"\blikh\s*liya\b", r"\bsamajh\s*gaya\b",
-            r"\bkha\s*rha\b", r"\bpee\s*liya\b", r"\bgaya\s*tha\b", r"\baaya\s*tha\b",
-            
-            # Greetings/Common
-            r"kemiti\s*achha", r"namaskar", r"suva\s*sakal"
+        # ── PRIORITY 0: Critical Keyword Shield (Death/Murder) ─────────────
+        # Prevent "Safe Pass" for rumors involving death, murder, or violence
+        CRITICAL_KEYWORDS = [
+            'death', 'murder', 'kill', 'attack', 'accident', 'dead', 'shradhanjali',
+            'maut', 'mar diya', 'mar gaya', 'hatya', 'badla', 'dhamki', 'bomb',
+            'blast', 'terrorism', 'arrest', 'scam', 'prize', 'lottery', 'winner'
         ]
-        
+        if any(kw in text_norm for kw in CRITICAL_KEYWORDS):
+            logger.info("⚠️ Critical Keywords Detected — Skipping Fast-Pass and forcing deep analysis.")
+            return {"indic_risk_adjustment": 5, "reason": "Critical keywords detected — skipping fast-pass.", "intent": "critical"}
+
+        # ── PRIORITY 1: Instant Regex Pass (0ms) ──────────────────────────
         for pattern in REGIONAL_SAFE_PATTERNS:
-            if re.search(pattern, text_lower):
+            if re.search(pattern, text_norm):
                 logger.info(f"✅ Instant Regio-Safe Match: '{pattern}' detected in '{text}'")
                 return {
                     "indic_risk_adjustment": -35, # Strong reduction to ensure it becomes Safe
@@ -55,5 +55,11 @@ class IndicAnalyzer:
         # in llm_explainer.py to avoid local hangs.
         return {"indic_risk_adjustment": 0, "reason": "No instant regional match"}
 
-# Global Instance
-indic_engine = IndicAnalyzer()
+_indic_engine = None
+
+def get_indic_engine():
+    """Lazy-load Indic Analyzer singleton."""
+    global _indic_engine
+    if _indic_engine is None:
+        _indic_engine = IndicAnalyzer()
+    return _indic_engine

@@ -6,17 +6,21 @@ import hashlib
 import json
 import time
 import uuid
-from typing import Optional
+import logging
+from typing import Optional, Any
 from fastapi import APIRouter, Request, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from utils.safety_utils import is_safe_text
 
 router = APIRouter()
-
+logger = logging.getLogger(__name__)
 
 # ── Request / Response Models ───────────────────────────────
 class AnalyzeRequest(BaseModel):
-    content_type: str = Field(..., pattern="^(text|url|image|video)$", description="Type of content")
-    text: Optional[str] = Field(None, max_length=5000, description="Text or URL content")
+    model_config = ConfigDict(extra='allow')
+    
+    content_type: str = Field(..., pattern="^(text|url|image|video|document)$", description="Type of content")
+    text: Optional[str] = Field(None, max_length=50000, description="Text or URL content")
     file_url: Optional[str] = Field(None, description="Image/video URL (Cloudinary)")
     session_id: Optional[str] = Field(None, description="Session ID for history")
 
@@ -36,8 +40,11 @@ class AnalyzeResponse(BaseModel):
     confidence: int
     risk_score: int
     reasons: list[str]
+    explanation: Optional[dict] = None   # Rich structured explanation (NEW)
     signals: dict
+    remote_url: Optional[str] = None
     processing_ms: int
+
 
 
 # ── Main Analyze Endpoint ──────────────────────────────────
@@ -59,6 +66,14 @@ async def analyze_content(request: Request, body: AnalyzeRequest):
     if body.content_type in ("image", "video") and not body.file_url:
         raise HTTPException(400, "file_url required for image/video analysis")
     
+    # ── Step 0: Safety Guard ─────────────────────────────
+    if body.text and not is_safe_text(body.text):
+        logger.warning(f"Offensive content blocked: {body.text[:50]}...")
+        raise HTTPException(
+            status_code=400, 
+            detail="⚠️ Safety Warning: Offensive language is not allowed in MisLEADING. Please remove it to proceed."
+        )
+    
     # Generate content hash for caching
     content = body.text or body.file_url or ""
     content_hash = hashlib.sha256(content.encode()).hexdigest()
@@ -77,16 +92,59 @@ async def analyze_content(request: Request, body: AnalyzeRequest):
     
     # ── Step 2: Run AI Pipeline ─────────────────────────
     from ai_wrapper.wrapper import run_full_analysis
+    import re
+
+    # Automated URL extraction for full "Scam Shield" coverage
+    extracted_url = None
+    if body.text:
+        # Robust URL extraction regex
+        url_match = re.search(r'(https?://[^\s/$.?#].[^\s]*)', body.text)
+        if url_match:
+            extracted_url = url_match.group(0)
     
     analysis_input = {
         "content_type": body.content_type,
         "text": body.text,
-        "url": body.text if body.content_type == "url" else None,
+        "url": extracted_url or (body.text if body.content_type == "url" else None),
         "file_url": body.file_url,
         "ml_model": request.app.state.ml_model,
     }
     
-    result = await run_full_analysis(analysis_input)
+    try:
+        result = await run_full_analysis(analysis_input)
+    except Exception as e:
+        logger.error(f"AI Pipeline Crash: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI Engine Error: {str(e)}")
+    
+    # ── Step 2.5: Host the file if Base64 (for Cross-User Sync) ──
+    remote_url = None
+    if body.content_type in ("image", "document") and body.file_url and body.file_url.startswith("data:"):
+        try:
+            import base64
+            import os
+            
+            # Determine extension
+            header, encoded = body.file_url.split(",", 1)
+            ext = "jpg"
+            if "image/png" in header: ext = "png"
+            elif "application/pdf" in header: ext = "pdf"
+            
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            upload_dir = os.path.join(backend_dir, "static", "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            file_path = os.path.join(upload_dir, filename)
+            with open(file_path, "wb") as f:
+                f.write(base64.b64decode(encoded))
+            
+            # Construct public URL
+            base_url = str(request.base_url).rstrip("/")
+            # Safety: If running behind a specific IP/proxy, ensure it matches
+            remote_url = f"{base_url}/static/uploads/{filename}"
+            logger.info(f"📁 Hosted uploaded {body.content_type} at: {remote_url}")
+        except Exception as e:
+            logger.error(f"❌ Failed to host file: {e}")
     
     # ── Step 3: Build Response ──────────────────────────
     processing_ms = int((time.time() - start_time) * 1000)
@@ -97,9 +155,12 @@ async def analyze_content(request: Request, body: AnalyzeRequest):
         "confidence": result["confidence"],
         "risk_score": result["risk_score"],
         "reasons": result["reasons"],
+        "explanation": result.get("explanation"),   # Rich structured explanation
         "signals": result["signals"],
+        "remote_url": remote_url,
         "processing_ms": processing_ms,
     }
+
     
     # ── Step 4: Save to Database ──────────────────────────
     from db.database import AsyncSessionLocal
@@ -142,7 +203,7 @@ async def analyze_content(request: Request, body: AnalyzeRequest):
                         
                 await session.commit()
             except Exception as e:
-                print(f"DB Error: {e}", file=sys.stderr)
+                logger.error(f"DB Error: {e}")
                 
     import asyncio
     asyncio.create_task(save_to_db(response_data))
