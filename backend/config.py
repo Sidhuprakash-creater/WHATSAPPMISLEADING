@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "MisLEADING"
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
+    PORT: int = 8000
     
     # Auth
     JWT_SECRET: str = "change-this-to-a-very-long-random-string"
@@ -19,6 +20,7 @@ class Settings(BaseSettings):
     
     # AI Keys
     GROQ_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
     
     # URL Security
     GOOGLE_SAFE_BROWSING_KEY: str = ""
@@ -31,7 +33,8 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     
     class Config:
-        env_file = ".env"
+        import os
+        env_file = os.path.join(os.path.dirname(__file__), ".env")
         env_file_encoding = "utf-8"
 
 
