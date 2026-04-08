@@ -6,7 +6,7 @@ import 'package:path/path.dart' as path;
 import '../models/message.dart';
 
 class ApiService {
-  final String baseUrl = 'http://40.0.3.134:8000'; // Replace with your backend URL
+  final String baseUrl = 'http://127.0.0.1:8000'; // Replace with your backend URL
 
   Future<ScanResult> analyzeContent({
     required String contentType,

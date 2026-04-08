@@ -1,0 +1,2 @@
+INFO:     10.70.239.115:33718 - "POST /api/v1/analyze HTTP/1.1" 200 OK
+INFO:     10.70.239.115:35780 - "POST /api/v1/analyze HTTP/1.1" 422 Unprocessable Content

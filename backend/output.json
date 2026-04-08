@@ -1,0 +1,120 @@
+{
+  "verdict": "High Risk",
+  "confidence": 88,
+  "risk_score": 88,
+  "reasons": [
+    "Financial scam: Request to forward the message to claim the money",
+    "Lack of official announcement from the government",
+    "No credible source to support the claim",
+    "This is a classic example of a financial scam, where the perpetrator tries to create a sense of urge"
+  ],
+  "explanation": {
+    "summary": "This is a classic example of a financial scam, where the perpetrator tries to create a sense of urgency and trust by associating themselves with a public figure. The claim is likely to be false and the message is designed to trick people into sending it to their contacts, thereby spreading the scam.",
+    "primary_claim": "Modi has announced 50000 rupees to everyone's account",
+    "why_fake": [
+      "Lack of official announcement from the government",
+      "No credible source to support the claim"
+    ],
+    "entities": [
+      {
+        "name": "Narendra Modi",
+        "type": "politician",
+        "role": "Prime Minister of India",
+        "party": "BJP",
+        "affiliation": "Government of India",
+        "known_for": [
+          "Digital India",
+          "PM-KISAN"
+        ],
+        "official_website": "pmindia.gov.in",
+        "misuse_note": "Name is very frequently misused in fake government scheme scams.",
+        "source": "local_db"
+      }
+    ],
+    "claim_vs_reality": [
+      {
+        "claim": "50000 rupees to everyone's account",
+        "reality": "No such announcement has been made by the government",
+        "source_hint": "Official government website or news channels"
+      }
+    ],
+    "patterns_found": [
+      {
+        "type": "Financial scam",
+        "evidence": "Request to forward the message to claim the money"
+      }
+    ],
+    "real_vs_fake_data": "",
+    "verified_sources": [
+      {
+        "title": "Official government website or news channels",
+        "url": "https://Official government website or news channels"
+      }
+    ],
+    "safe_to_forward": false
+  },
+  "signals": {
+    "text": {
+      "label": "normal",
+      "prob": 0.88,
+      "confidence": 88,
+      "probabilities": {
+        "normal": 0.88,
+        "fake": 0.12
+      },
+      "details": "ML classifier: normal (88% confidence)"
+    },
+    "indic_context": {
+      "indic_risk_adjustment": 0,
+      "reason": "No instant regional match"
+    },
+    "llm": {
+      "primary_claim": "Modi has announced 50000 rupees to everyone's account",
+      "severity": "extreme",
+      "is_public_figure": true,
+      "safe_to_forward": false,
+      "llm_confidence_adjustment": 0,
+      "why_fake": [
+        "Lack of official announcement from the government",
+        "No credible source to support the claim"
+      ],
+      "entities": [
+        {
+          "name": "Narendra Modi",
+          "type": "politician",
+          "role": "Prime Minister of India",
+          "party": "BJP",
+          "affiliation": "Government of India",
+          "known_for": [
+            "Digital India",
+            "PM-KISAN"
+          ],
+          "official_website": "pmindia.gov.in",
+          "misuse_note": "Name is very frequently misused in fake government scheme scams.",
+          "source": "local_db"
+        }
+      ],
+      "claim_vs_reality": [
+        {
+          "claim": "50000 rupees to everyone's account",
+          "reality": "No such announcement has been made by the government",
+          "source_hint": "Official government website or news channels"
+        }
+      ],
+      "patterns_found": [
+        {
+          "type": "Financial scam",
+          "evidence": "Request to forward the message to claim the money"
+        }
+      ],
+      "explanation": "This is a classic example of a financial scam, where the perpetrator tries to create a sense of urgency and trust by associating themselves with a public figure. The claim is likely to be false and the message is designed to trick people into sending it to their contacts, thereby spreading the scam.",
+      "_detected_lang": "english"
+    },
+    "web_search": {
+      "claim": "Modi has announced 50000 rupees to everyone's account",
+      "status": "unverified",
+      "evidence": [],
+      "source": "web_search"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-primary-whatsapp: #00a884;
+  --color-whatsapp-bg: #111b21;
+  --color-whatsapp-surface: #202c33;
+  --color-whatsapp-bubble-me: #005c4b;
+  --color-whatsapp-bubble-them: #202c33;
+  --color-risk-high: #ef4444;
+  --color-risk-medium: #ffbc2d;
+  --color-risk-low: #25d366;
+}
+
+:root {
+  --background: #111b21;
+  --foreground: #e9edef;
+  --surface: #202c33;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for WhatsApp feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #374045;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

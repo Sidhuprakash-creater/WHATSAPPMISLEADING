@@ -1,0 +1,229 @@
+{
+  "narendra modi": {
+    "name": "Narendra Modi",
+    "type": "politician",
+    "role": "Prime Minister of India",
+    "party": "BJP (Bharatiya Janata Party)",
+    "affiliation": "Government of India",
+    "known_for": ["Digital India", "PM-KISAN", "Demonetization 2016", "GST"],
+    "official_website": "pmindia.gov.in",
+    "misuse_note": "Name is very frequently misused in fake government scheme scams. Always verify at pmindia.gov.in or pib.gov.in."
+  },
+  "amit shah": {
+    "name": "Amit Shah",
+    "type": "politician",
+    "role": "Union Home Minister of India",
+    "party": "BJP (Bharatiya Janata Party)",
+    "affiliation": "Government of India, Ministry of Home Affairs",
+    "known_for": ["Article 370 abrogation", "CAA", "National Security"],
+    "misuse_note": "Name used in fake police/CBI threat messages. MHA never contacts citizens via WhatsApp."
+  },
+  "rahul gandhi": {
+    "name": "Rahul Gandhi",
+    "type": "politician",
+    "role": "Leader of Opposition, Member of Parliament (Wayanad/Raebareli)",
+    "party": "INC (Indian National Congress)",
+    "affiliation": "Opposition, Lok Sabha",
+    "known_for": ["Bharat Jodo Yatra", "NYAY scheme proposal"],
+    "misuse_note": "Name used in fabricated quotes and political propaganda. Verify via official INC channels."
+  },
+  "arvind kejriwal": {
+    "name": "Arvind Kejriwal",
+    "type": "politician",
+    "role": "Chief Minister of Delhi (AAP)",
+    "party": "AAP (Aam Aadmi Party)",
+    "affiliation": "Government of Delhi (NCT)",
+    "known_for": ["Free electricity for Delhiites", "Mohalla Clinics", "Delhi school renovation"],
+    "misuse_note": "Name used in fake Delhi government scheme messages. Delhi govt scheme info is at delhi.gov.in."
+  },
+  "yogi adityanath": {
+    "name": "Yogi Adityanath",
+    "type": "politician",
+    "role": "Chief Minister of Uttar Pradesh",
+    "party": "BJP (Bharatiya Janata Party)",
+    "affiliation": "Government of Uttar Pradesh",
+    "known_for": ["UP Economical development", "Anti-Romeo squads", "Kashi Vishwanath corridor"],
+    "misuse_note": "Name used in fake UP government scheme and land allotment scams. Always check up.gov.in."
+  },
+  "mamata banerjee": {
+    "name": "Mamata Banerjee",
+    "type": "politician",
+    "role": "Chief Minister of West Bengal",
+    "party": "AITC (All India Trinamool Congress)",
+    "affiliation": "Government of West Bengal",
+    "known_for": ["Kanyashree scheme", "Swasthya Sathi", "Bengal development"],
+    "misuse_note": "Name used in fake WB government benefit scams. Verify at wb.gov.in."
+  },
+  "gautam adani": {
+    "name": "Gautam Adani",
+    "type": "businessman",
+    "role": "Chairman & Founder, Adani Group",
+    "party": null,
+    "affiliation": "Adani Group (Ports, Energy, Airports, Cement, Media)",
+    "known_for": ["Mundra Port", "Adani Enterprises", "Green Energy push", "Hindenburg report controversy 2023"],
+    "misuse_note": "Name used in fake investment scam ads ('Adani Ji's secret stock'). Adani Group does not offer guaranteed returns via WhatsApp."
+  },
+  "mukesh ambani": {
+    "name": "Mukesh Ambani",
+    "type": "businessman",
+    "role": "Chairman & MD, Reliance Industries",
+    "party": null,
+    "affiliation": "Reliance Industries (Jio, Reliance Retail, JioCinema)",
+    "known_for": ["Jio disruption", "Reliance Retail", "Antilia residence"],
+    "misuse_note": "Name massively abused in 'free Jio data' and 'Reliance lottery' scams. Jio never offers free 500GB data via WhatsApp links."
+  },
+  "ratan tata": {
+    "name": "Ratan Tata",
+    "type": "businessman",
+    "role": "Former Chairman, Tata Sons (Philanthropist)",
+    "party": null,
+    "affiliation": "Tata Group (TCS, Taj Hotels, Jaguar Land Rover)",
+    "known_for": ["Tata Nano", "Jaguar Land Rover acquisition", "Philanthropy", "Tata Trusts"],
+    "misuse_note": "Deceased (Oct 2024). Name frequently used in fake charity and investment scams after his passing."
+  },
+  "elon musk": {
+    "name": "Elon Musk",
+    "type": "businessman",
+    "role": "CEO, Tesla & SpaceX. Owner, X (Twitter)",
+    "party": null,
+    "affiliation": "Tesla, SpaceX, X Corp, xAI",
+    "known_for": ["Tesla electric cars", "Neuralink", "Starlink", "Twitter/X acquisition"],
+    "misuse_note": "Name commonly used in fake crypto giveaway scams. Elon Musk does NOT give away Bitcoin or ETH via WhatsApp or Telegram."
+  },
+  "virat kohli": {
+    "name": "Virat Kohli",
+    "type": "celebrity",
+    "role": "Indian Cricketer (Former Captain, Test & ODI)",
+    "party": null,
+    "affiliation": "BCCI, Royal Challengers Bengaluru (IPL)",
+    "known_for": ["Test records", "Aggressive batting", "Brand ambassador"],
+    "misuse_note": "Name used in fake betting app endorsements and investment scams. He does not personally endorse gambling platforms on WhatsApp."
+  },
+  "shah rukh khan": {
+    "name": "Shah Rukh Khan",
+    "type": "celebrity",
+    "role": "Bollywood Actor, Film Producer",
+    "party": null,
+    "affiliation": "Red Chillies Entertainment, KKR (IPL)",
+    "known_for": ["Dilwale Dulhania Le Jayenge", "Pathaan", "Jawan"],
+    "misuse_note": "Name used in fake charity, film ticket giveaway, and investment app scams."
+  },
+  "modi": {
+    "name": "Narendra Modi",
+    "type": "politician",
+    "role": "Prime Minister of India",
+    "party": "BJP",
+    "affiliation": "Government of India",
+    "known_for": ["Digital India", "PM-KISAN"],
+    "official_website": "pmindia.gov.in",
+    "misuse_note": "Name is very frequently misused in fake government scheme scams."
+  },
+  "pm modi": {
+    "name": "Narendra Modi",
+    "type": "politician",
+    "role": "Prime Minister of India",
+    "party": "BJP",
+    "affiliation": "Government of India",
+    "official_website": "pmindia.gov.in",
+    "misuse_note": "Frequently misused in fake government scheme scams. Verify at pmindia.gov.in."
+  },
+  "adani": {
+    "name": "Gautam Adani",
+    "type": "businessman",
+    "role": "Chairman, Adani Group",
+    "party": null,
+    "affiliation": "Adani Group",
+    "misuse_note": "Name used in fake guaranteed investment return scams."
+  },
+  "ambani": {
+    "name": "Mukesh Ambani",
+    "type": "businessman",
+    "role": "Chairman, Reliance Industries / Jio",
+    "party": null,
+    "affiliation": "Reliance Industries, Jio",
+    "misuse_note": "Name massively abused in 'free Jio data' scams."
+  },
+  "rbi": {
+    "name": "Reserve Bank of India (RBI)",
+    "type": "institution",
+    "role": "India's Central Bank (Regulator)",
+    "party": null,
+    "affiliation": "Government of India",
+    "known_for": ["Monetary policy", "Banking regulation", "Currency issuance"],
+    "misuse_note": "RBI NEVER sends emails or WhatsApp messages asking for account details, OTPs, or passwords. Always verify at rbi.org.in."
+  },
+  "pib": {
+    "name": "Press Information Bureau (PIB)",
+    "type": "institution",
+    "role": "Official Government of India Press Body",
+    "party": null,
+    "affiliation": "Government of India, Ministry of Information",
+    "known_for": ["Fact check debunking fake government news", "Official press releases"],
+    "misuse_note": "PIB Fact Check (pib.gov.in/factcheck.aspx) is the authoritative debunker of fake govt scheme news."
+  },
+  "trai": {
+    "name": "TRAI (Telecom Regulatory Authority of India)",
+    "type": "institution",
+    "role": "India's Telecom Regulator",
+    "party": null,
+    "affiliation": "Government of India",
+    "misuse_note": "TRAI does NOT call or WhatsApp users to block numbers or demand Aadhaar. Calls claiming to be TRAI threatening disconnection are scams."
+  },
+  "pm": {
+    "name": "Prime Minister of India",
+    "type": "politician",
+    "role": "Head of Government of India",
+    "affiliation": "Government of India",
+    "known_for": ["Executive leadership", "National policy"],
+    "misuse_note": "Generic title used in high-gravity death and health rumors. Always verify at pmindia.gov.in."
+  },
+  "prime minister": {
+    "name": "Prime Minister of India",
+    "type": "politician",
+    "role": "Head of Government of India",
+    "affiliation": "Government of India",
+    "misuse_note": "Generic title used in high-gravity death and health rumors. Always verify at pmindia.gov.in."
+  },
+  "cm": {
+    "name": "Chief Minister",
+    "type": "politician",
+    "role": "Head of State Government",
+    "affiliation": "State Government",
+    "misuse_note": "Generic title used in state-level political rumors and fake schemes."
+  },
+  "chief minister": {
+    "name": "Chief Minister",
+    "type": "politician",
+    "role": "Head of State Government",
+    "affiliation": "State Government",
+    "misuse_note": "Generic title used in state-level political rumors and fake schemes."
+  },
+  "rashtrapati": {
+    "name": "President of India",
+    "type": "politician",
+    "role": "Head of State of India",
+    "affiliation": "Republic of India",
+    "misuse_note": "Title used in extremely high-stakes fake news regarding constitutional changes or national emergencies."
+  },
+  "president": {
+    "name": "President of India",
+    "type": "politician",
+    "role": "Head of State of India",
+    "affiliation": "Republic of India",
+    "misuse_note": "Title used in extremely high-stakes fake news regarding constitutional changes or national emergencies."
+  },
+  "sarkar": {
+    "name": "Government",
+    "type": "institution",
+    "role": "Governing body",
+    "affiliation": "Public Authority",
+    "misuse_note": "Term used to add false authority to fake schemes and announcements."
+  },
+  "government": {
+    "name": "Government",
+    "type": "institution",
+    "role": "Governing body",
+    "affiliation": "Public Authority",
+    "misuse_note": "Term used to add false authority to fake schemes and announcements."
+  }
+}
